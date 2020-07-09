@@ -1,12 +1,8 @@
 <?php
 
-require_once("LoggerTrait.php");
-
 class DB extends \PDO
 {
-    use LoggerTrait;
 
-    protected $logger;
     protected $debug = false;
 
     /** @var  \PDOStatement */
@@ -27,16 +23,6 @@ class DB extends \PDO
         $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         $this->exec("SET SESSION sql_mode=''");
-    }
-
-    public function setLogger($logger)
-    {
-        $this->logger = $logger;
-    }
-
-    public function getLogger()
-    {
-        return $this->logger;
     }
 
     public function setDebug($on = true)
@@ -80,7 +66,7 @@ class DB extends \PDO
 
         try {
             if ($this->debug) {
-                $this->debug('SQL: ' . $sql, $params);
+                echo 'SQL: ' . $sql, print_r($params, 1);
             }
 
             $this->sth = $sth = $this->prepare($sql);
@@ -96,9 +82,9 @@ class DB extends \PDO
             }
 
         } catch (\PDOException $e) {
-            $this->error('SQL: ' . $sql, $params);
-            $this->error(str_replace("\n", ' | ', $e->__toString()));
-            $this->error('debugDumpParams:', $sth->debugDumpParams());
+            echo 'SQL: ' . $sql, print_r($params, 1);
+            echo str_replace("\n", ' | ', $e->__toString());
+            echo 'debugDumpParams:', print_r($sth->debugDumpParams(), 1);
 
             return false;
         }
