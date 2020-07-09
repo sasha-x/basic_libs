@@ -1,34 +1,43 @@
 <?php
 
-/* Чтение почты по IMAP. */
-
+/**
+ * Read email via IMAP
+ * Tested on Ms Exchange server
+ */
 class IMAP
 {
 
-    var $server;
-    var $connect;
+    public $server;
+    public $connect;
 
-    function __construct($server, $user, $pass, $folder = 'INBOX')
+    protected $readOption;
+
+    protected $htmlmsg;
+    protected $plainmsg;
+    protected $charset;
+    protected $attachments;
+
+    public function __construct($server, $user, $pass, $folder = 'INBOX')
     {
         $this->server = "{" . $server . "/novalidate-cert}";
         return $this->connect($user, $pass, $folder);
     }
 
-    function connect($user, $pass, $folder)
+    public function connect($user, $pass, $folder)
     {
         $this->connect = imap_open($this->server . $folder, $user, $pass);        //OP_HALFOPEN|OP_DEBUG
 
         if ($this->connect) {
-            txtlog("Connect successfull");
+            echo("Connect successfull");
         } else {
-            txtlog("Connect failed");
-            txtlog(imap_errors());
+            echo("Connect failed");
+            print_r(imap_errors());
             return false;
         }
         return $this->connect;
     }
 
-    function __destruct()
+    public function __destruct()
     {
         imap_close($this->connect);
     }
@@ -36,7 +45,7 @@ class IMAP
     //ищет письма в ящике по условию
     //'UNSEEN' - непрочитанные, 'ALL' - все
     //возвращает список их номеров
-    function search($criteria)
+    public function search($criteria)
     {
         $mails = imap_search($this->connect, $criteria);        //, SE_UID
         return $mails;
@@ -45,55 +54,42 @@ class IMAP
 
     // input $mbox = IMAP stream, $mid = message id
     // output all the following:
-    function read($mid, $set_seen = 1)
+    public function read($mid, $setSeen = 1)
     {
-
         $mbox = $this->connect;
 
 
-        if ($set_seen == 0)                //помечать прочтенным или нет
-        {
-            $this->read_option = FT_PEEK;
-        }        //TODO
-        else {
-            $this->read_option = 0;
+        if ($setSeen == 0) {                //помечать прочтенным или нет
+            $this->readOption = FT_PEEK;
+        } else {    //TODO
+            $this->readOption = 0;
         }
 
-
-        //global $htmlmsg,$plainmsg,$charset,$attachments;
-
-        $htmlmsg = &$this->htmlmsg;
-        $plainmsg = &$this->plainmsg;
-        $charset = &$this->charset;
-        $attachments = &$this->attachments;
-
-        $htmlmsg = '';
-        $plainmsg = '';
-        $charset = '';
-        $attachments = [];
+        $htmlmsg = &$this->htmlmsg = '';
+        $plainmsg = &$this->plainmsg = '';
+        $charset = &$this->charset = '';
+        $attachments = &$this->attachments = [];
 
         // HEADER
-        //$header = imap_header($mbox,$mid);
-        $header = $this->getheader($mbox, $mid);
+        $header = $this->getHeader($mbox, $mid);
 
         // BODY
         $s = imap_fetchstructure($mbox, $mid);
-        if (!$s->parts)  // simple
-        {
-            $this->getpart($mbox, $mid, $s, 0);
-        }  // pass 0 as part-number
-        else {  // multipart: cycle through each part
+        if (!$s->parts) {  // simple
+            $this->getPart($mbox, $mid, $s, 0); // pass 0 as part-number
+        } else {  // multipart: cycle through each part
             foreach ($s->parts as $partno0 => $p) {
-                $this->getpart($mbox, $mid, $p, $partno0 + 1);
+                $this->getPart($mbox, $mid, $p, $partno0 + 1);
             }
         }
 
         $body = [
-            charset => $charset,
-            body => !empty($htmlmsg) ? $htmlmsg : $plainmsg,
+            'charset' => $charset,
+            'body' => !empty($htmlmsg) ? $htmlmsg : $plainmsg,
         ];
+
         foreach ($attachments as $fn => $fb) {
-            $body[files][] = ['filename' => $fn, 'content' => $fb, 'size' => strlen($fb)];
+            $body['files'][] = ['filename' => $fn, 'content' => $fb, 'size' => strlen($fb)];
         }
 
         $mail = array_merge($header, $body);
@@ -101,8 +97,7 @@ class IMAP
         return $mail;
     }
 
-
-    private function getpart($mbox, $mid, $p, $partno)
+    protected function getPart($mbox, $mid, $p, $partno)
     {
         // $partno = '1', '2', '2.1', '2.1.3', etc for multipart, 0 if simple
 
@@ -113,8 +108,8 @@ class IMAP
 
         // DECODE DATA
         $data = ($partno) ?
-            imap_fetchbody($mbox, $mid, $partno, $this->read_option) :  // multipart
-            imap_body($mbox, $mid, $this->read_option);  // simple
+            imap_fetchbody($mbox, $mid, $partno, $this->readOption) :  // multipart
+            imap_body($mbox, $mid, $this->readOption);  // simple
         // Any part may be encoded, even plain text messages, so check everything.
         if ($p->encoding == 4) {
             $data = quoted_printable_decode($data);
@@ -171,13 +166,13 @@ class IMAP
         // SUBPART RECURSION
         if ($p->parts) {
             foreach ($p->parts as $partno0 => $p2) {
-                $this->getpart($mbox, $mid, $p2, $partno . '.' . ($partno0 + 1));
+                $this->getPart($mbox, $mid, $p2, $partno . '.' . ($partno0 + 1));
             }  // 1.2, 1.2.1, etc.
         }
     }
 
 
-    private function getheader($connect, $msg_number)
+    private function getHeader($connect, $msg_number)
     {
         $header = imap_rfc822_parse_headers(imap_fetchheader($connect, $msg_number));
 
@@ -212,6 +207,4 @@ class IMAP
     {
         return imap_setflag_full($this->connect, $msg_numbers, $flags);
     }
-
-
 }
