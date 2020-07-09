@@ -25,6 +25,8 @@ class DB extends \PDO
             $options
         );
         $this->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        $this->exec("SET SESSION sql_mode=''");
     }
 
     public function setLogger($logger)
@@ -104,7 +106,7 @@ class DB extends \PDO
 
     public function all($sql, $params = [])
     {
-        $res = $this->execute($sql, $params = []);
+        $res = $this->execute($sql, $params);
 
         //For insert, update etc or on failure
         if (is_bool($res)) {
