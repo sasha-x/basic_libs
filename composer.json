@@ -1,0 +1,29 @@
+{
+    "name": "sasha-x/libs",
+    "require": {
+        "php": ">=7.2.0",
+        "ext-curl": "*",
+        "ext-imap": "*",
+        "ext-PDO": "*",
+        "ext-libxml": "*",
+        "ext-dom": "*",
+        "pear/mail": "dev-master",
+        "pear/net_smtp": "dev-master"
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "autoload": {
+        "classmap": ["/"]
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/sasha-x/libs.git"
+        }
+    ]
+}
