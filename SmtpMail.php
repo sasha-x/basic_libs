@@ -1,11 +1,16 @@
 <?php
 
+//use Mail;
+//use PEAR;
+
 class SmtpMail
 {
-    protected $host;
-    protected $port;
-    protected $username;
-    protected $password;
+    public $host;
+    public $port;
+    public $username;
+    public $password;
+
+    public $error;
 
     public function __construct($host, $port, $username, $password)
     {
@@ -15,9 +20,13 @@ class SmtpMail
         $this->password = $password;
     }
 
-    public function send($to, $subject, $message, $from = '', $reply_to = '')
+    public function send($to, $subject, $message, $from = '', $replyTo = '')
     {
         $subject = "=?utf-8?B?" . base64_encode($subject) . "?=";
+
+        if (!$from) {
+            $from = $this->username;
+        }
 
         $headers = [
             'From' => $from,
@@ -25,8 +34,8 @@ class SmtpMail
             'Subject' => $subject,
         ];
 
-        if (!empty($reply_to)) {
-            $headers['Reply-To'] = $reply_to;
+        if (!empty($replyTo)) {
+            $headers['Reply-To'] = $replyTo;
         }
 
         $headers["MIME-Version"] = "1.0";
@@ -52,7 +61,7 @@ class SmtpMail
         $mail = $smtp->send($to, $headers, $message);
 
         if (PEAR::isError($mail)) {
-            echo $mail->getMessage();
+            $this->error = $mail->getMessage();
             return false;
         } else {
             return true;
