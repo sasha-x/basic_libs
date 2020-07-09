@@ -6,9 +6,7 @@
         "ext-imap": "*",
         "ext-PDO": "*",
         "ext-libxml": "*",
-        "ext-dom": "*",
-        "pear/mail": "dev-master",
-        "pear/net_smtp": "dev-master"
+        "ext-dom": "*"
     },
     "config": {
         "optimize-autoloader": true
