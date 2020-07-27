@@ -109,7 +109,17 @@ class DB extends \PDO
 
         return $this->sth->fetch($mode);   //
     }
-
+    
+    public function column($sql, $params = [])
+    {
+        $r = $this->all($sql, $params);
+        if ($r) {
+            $key = key(current($r));
+            $r = array_column($r, $key);
+        }
+        return $r;
+    }
+    
     public function scalar($sql, $params = [])
     {
         $this->execute($sql, $params);
