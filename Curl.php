@@ -39,6 +39,8 @@ class Curl
     public $debug = 0;
     public $timeout = 60;                    //таймаут операции
 
+    public $torControlPort;
+    
     protected $userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:67.0) Gecko/20100101 Firefox/67.0";
 
     protected $httpHeaders = [
@@ -301,7 +303,9 @@ class Curl
     public function newTorIdentity()
     {
         $port = $this->torControlPort;
-        echo `(echo authenticate '""'; echo signal newnym; echo quit) | nc localhost $port`;
+        if($port) {
+            echo `(echo authenticate '""'; echo signal newnym; echo quit) | nc localhost $port`;
+        }
     }
 
     /**
